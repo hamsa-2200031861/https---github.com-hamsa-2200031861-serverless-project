@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results Overview</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            background: linear-gradient(135deg, #e0eafc, #68a2e8);
+            color: #333;
+            padding: 20px;
+            position: relative;
+            min-height: 100vh;
+        }
+        .chart-container {
+            width: 80%;
+            max-width: 600px;
+            margin: auto;
+        }
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .logout-button {
+            position: absolute;
+            bottom: 70px;
+            right: 70px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Results Overview</h1>
+    <div class="chart-container">
+        <canvas id="resultsChart"></canvas>
+    </div>
+    
+    <button class="button" onclick="location.href='results.html'">Back</button>
+    <button class="button" id="downloadButton">Download overall  Results</button>
+    <button class="logout-button" onclick="logout()">Logout</button>
+    
+    <script>
+        async function fetchResults() {
+            try {
+                const API_URL = "https://6uzb7v6cld.execute-api.us-east-1.amazonaws.com/prod/results";
+                const response = await fetch(API_URL, { method: "GET", mode: "cors", headers: { "Content-Type": "application/json" } });
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const responseData = await response.json();
+                const data = typeof responseData.body === "string" ? JSON.parse(responseData.body) : responseData.body;
+                if (Array.isArray(data)) {
+                    data.sort((a, b) => b.vote_count - a.vote_count);
+                    const totalVotes = data.reduce((sum, item) => sum + item.vote_count, 0);
+                    const formattedData = data.map(item => ({
+                        option: item["option "].trim(),
+                        votes: item.vote_count,
+                        percentage: ((item.vote_count / totalVotes) * 100).toFixed(2)
+                    }));
+                    renderChart(formattedData);
+                    window.resultsData = formattedData; // Store data for PDF generation
+                }
+            } catch (error) {
+                console.error("Error fetching results:", error);
+            }
+        }
+        
+        function renderChart(data) {
+            const labels = data.map(item => `${item.option} (${item.percentage}%)`);
+            const votes = data.map(item => item.votes);
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Vote Percentage',
+                        data: votes,
+                        backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                        borderColor: 'rgba(0, 123, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const currentDate = new Date().toLocaleString();
+            doc.text(`Results Overview - ${currentDate}`, 10, 10);
+            
+            let yOffset = 20;
+            window.resultsData.forEach(result => {
+                doc.text(`${result.option}: ${result.votes} votes (${result.percentage}%)`, 10, yOffset);
+                yOffset += 10;
+            });
+            
+            doc.save('results-overview.pdf');
+        }
+
+        function logout() {
+            window.location.href = "https://us-east-1pmgl4c7y1.auth.us-east-1.amazoncognito.com/login/continue?client_id=3mf7aac5vqcgk02umnqfoq5l2e&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Flogged_in.html&response_type=code&scope=email+openid+phone";
+        }
+
+        document.getElementById('downloadButton').addEventListener('click', generatePDF);
+        
+        fetchResults();
+    </script>
+</body>
+</html>

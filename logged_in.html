@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voting Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #e0eafc, #68a2e8);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 1.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .vote-option {
+            margin: 15px auto;
+            padding: 15px 25px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 320px;
+            text-align: left;
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .vote-option:hover {
+            transform: scale(1.05);
+        }
+
+        .vote-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+
+        .vote-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+
+        .vote-count {
+            font-weight: bold;
+            color: #555;
+        }
+
+        #thank-you-message {
+            display: none;
+            margin-top: 20px;
+            font-weight: bold;
+            color: green;
+        }
+
+        #upcoming-voting-btn {
+            margin-top: 30px;
+            padding: 12px 24px;
+            background-color: #3a91ed;
+            color: black;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s;
+        }
+
+        #upcoming-voting-btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Vote for your favorite</h1>
+    <p>Welcome! Please cast your vote.</p>
+
+    <div class="vote-option">
+        <span class="option-label">KLU</span>
+        <button class="vote-button" data-option="KLU">Vote</button>
+        <span class="vote-count" data-count="KLU">0</span> votes
+    </div>
+
+    <div class="vote-option">
+        <span class="option-label">SRM</span>
+        <button class="vote-button" data-option="SRM">Vote</button>
+        <span class="vote-count" data-count="SRM">0</span> votes
+    </div>
+
+    <div class="vote-option">
+        <span class="option-label">VIT</span>
+        <button class="vote-button" data-option="VIT">Vote</button>
+        <span class="vote-count" data-count="VIT">0</span> votes
+    </div>
+
+    <div id="thank-you-message">
+        Thanks for your vote! Redirecting to results page...
+    </div>
+
+    <button id="upcoming-voting-btn">Upcoming Voting</button>
+
+    <script>
+        document.getElementById('upcoming-voting-btn').addEventListener('click', function () {
+            window.location.href = 'upcoming.html';
+        });
+
+        const voteCounts = { KLU: 0, SRM: 0, VIT: 0 };
+        const apiUrl = "https://6uzb7v6cld.execute-api.us-east-1.amazonaws.com/prod/vote"; 
+
+        document.querySelectorAll(".vote-button").forEach(button => {
+            button.addEventListener("click", function() {
+                const option = this.dataset.option;
+
+                if (!confirm(`Are you sure you want to vote for ${option}?`)) return;
+
+                voteCounts[option]++;
+                document.querySelector(`[data-count="${option}"]`).textContent = voteCounts[option];
+
+                document.getElementById('thank-you-message').style.display = 'block';
+
+                fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ option: option }),
+                    mode: "cors"
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Vote recorded:", data);
+                    alert("Vote submitted successfully!");
+
+                    downloadVotingTicket(option);
+
+                    setTimeout(() => { window.location.href = 'results.html'; }, 2000);
+                })
+                .catch(error => {
+                    console.error("Error submitting vote:", error);
+                    alert("Error submitting vote. Please try again.");
+                });
+            });
+        });
+
+        function downloadVotingTicket(votedOption) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString();
+            const formattedTime = now.toLocaleTimeString();
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text("Thank You for Voting!", 40, 20);
+            doc.setFontSize(16);
+            doc.text(`You voted for: ${votedOption}`, 20, 40);
+            doc.text(`Date: ${formattedDate}`, 20, 60);
+            doc.text(`Time: ${formattedTime}`, 20, 80);
+            doc.text("Your vote has been recorded successfully!", 20, 100);
+
+            doc.save("Voting_Ticket.pdf");
+        }
+    </script>
+</body>
+</html>

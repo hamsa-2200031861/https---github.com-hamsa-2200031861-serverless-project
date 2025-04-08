@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Results</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            background: linear-gradient(135deg, #e0eafc, #68a2e8);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .results-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            width: 400px;
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 16px;
+            margin-top: 20px;
+            color: white;
+            background-color: #007bff;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="results-container">
+        <h1>Voting Results</h1>
+        <p>Thank you for voting!</p>
+        <div id="results">Loading results...</div>
+        <button class="button" onclick="location.href='logged_in.html'">Vote Again</button>
+        <button class="button" onclick="location.href='overview.html'">Overview Results</button>
+    </div>
+
+    <script>
+        async function fetchResults() {
+            try {
+                const API_URL = "https://6uzb7v6cld.execute-api.us-east-1.amazonaws.com/prod/results";
+                
+                const response = await fetch(API_URL, {
+                    method: "GET",
+                    mode: "cors",
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const responseData = await response.json();
+
+                // Extract only the "body" part from the response
+                const data = typeof responseData.body === "string" ? JSON.parse(responseData.body) : responseData.body;
+
+                let resultsHTML = "";
+
+                if (Array.isArray(data)) {
+                    // Sort by vote_count in descending order
+                    data.sort((a, b) => b.vote_count - a.vote_count);
+
+                    data.forEach(item => {
+                        resultsHTML += `<p>${item["option "].trim()}: ${item.vote_count} votes</p>`;
+                    });
+                } else {
+                    resultsHTML = "<p>Invalid response format.</p>";
+                }
+
+                document.getElementById("results").innerHTML = resultsHTML;
+            } catch (error) {
+                document.getElementById("results").innerHTML = "<p>Error fetching results. Please try again later.</p>";
+                console.error("Error fetching results:", error);
+            }
+        }
+
+        fetchResults();
+    </script>
+</body>
+</html>

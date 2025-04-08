@@ -1,0 +1,6 @@
+{
+    "dependencies": {
+      "aws-sdk": "^2.1561.0"  
+    },
+    "type": "module"
+  }

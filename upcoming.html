@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upcoming Voting</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 50px;
+            background: linear-gradient(135deg, #f0f2f5, #a8c0ff);
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        .countdown {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .countdown:hover {
+            transform: scale(1.05);
+        }
+        .small-button {
+            margin: 10px;
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
+            font-size: 14px;
+            display: inline-block;
+        }
+        .small-button:hover {
+            background-color: #0056b3;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Upcoming Voting Events</h1>
+    
+    <div class="countdown">
+        <p>Voting Event 1 starts in: <span id="timer1"></span></p>
+    </div>
+
+    <div class="countdown">
+        <p>Voting Event 2 starts in: <span id="timer2"></span></p>
+    </div>
+
+    <div class="countdown">
+        <p>Voting Event 3: <span style="color: red; font-weight: bold;">Time Ended - Unable to Vote</span></p>
+    </div>
+
+    <div>
+        <button class="small-button" onclick="window.location.href='logged_in.html'">Back to Voting</button>
+        <button class="small-button" onclick="window.location.href='https://us-east-1pmgl4c7y1.auth.us-east-1.amazoncognito.com/login/continue?client_id=3mf7aac5vqcgk02umnqfoq5l2e&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Flogged_in.html&response_type=code&scope=email+openid+phone'">Logout</button>
+    </div>
+
+    <script>
+        function startCountdown(targetDate, elementId) {
+            function updateCountdown() {
+                const now = new Date();
+                const timeDifference = targetDate - now;
+
+                if (timeDifference <= 0) {
+                    document.getElementById(elementId).textContent = "Voting is LIVE!";
+                    return;
+                }
+
+                const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+                document.getElementById(elementId).textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        const event1Date = new Date();
+        event1Date.setDate(event1Date.getDate() + 2);
+
+        const event2Date = new Date();
+        event2Date.setDate(event2Date.getDate() + 5);
+
+        startCountdown(event1Date, "timer1");
+        startCountdown(event2Date, "timer2");
+    </script>
+</body>
+</html>
